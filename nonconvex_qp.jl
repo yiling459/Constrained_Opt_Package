@@ -26,7 +26,11 @@ function trust_region_method(obj, grad, x0; tol=1e-6, max_iter=1000)
             x += p
         end
         # Update the trust region radius
-        Δ *= norm(g) > tol ? 0.8 : 1.2
+        if norm(g) > tol
+            Δ *= 0.8 
+        else
+            Δ *= 1.2
+        end
         # Check for convergence
         if norm(g) < tol
             break
