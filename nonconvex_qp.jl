@@ -19,8 +19,9 @@ function trust_region_method(obj, grad, x0; tol=1e-6, max_iter=1000)
     Δ = 1.0  # Initial trust region radius
     for i in 1:max_iter
         g = grad(x)
+        # The solution to the trust region subproblem can be obtained by solving a quadratic program, here simplified to a step in the gradient direction
         p = -Δ * normalize(g)
-        # Simplified acceptance criterion: if the objective function value decreases, accept the step
+        # Simplified acceptance criterion: if the objective function value decreases, accept the step.
         if obj(x + p) < obj(x)
             x += p
         end
@@ -34,7 +35,7 @@ function trust_region_method(obj, grad, x0; tol=1e-6, max_iter=1000)
     return x
 end
 
-# Initialize a random point within [0, 1] as the starting point
+# Initialize a random point within box [0, 1] as the starting point
 x0 = rand(10)
 
 # Apply the trust region method
