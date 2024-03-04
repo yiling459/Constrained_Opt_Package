@@ -13,17 +13,24 @@ objective(x) = 0.5 * x' * Q * x + q' * x
 # Gradient function
 gradient(x) = Q * x + q
 
+# Sigmoid function to map values into (0, 1)
+sigmoid(x) = 1.0 / (1.0 + exp(-x))
+
+# Inverse of the sigmoid function for initial mapping
+inv_sigmoid(y) = log(y / (1 - y))
+
 # An implementation of trust region method
 function trust_region_method(obj, grad, x0; tol=1e-6, max_iter=1000)
-    x = x0
+    x = map(inv_sigmoid, x0)
     Δ = 1.0  # Initial trust region radius
     for i in 1:max_iter
-        g = grad(x)
+        g = grad(map(sigmoid, x))
         # The solution to the trust region subproblem can be obtained by solving a quadratic program, here simplified to a step in the gradient direction
         p = -Δ * normalize(g)
+        x_new = x + p
         # Simplified acceptance criterion: if the objective function value decreases, accept the step.
-        if obj(x + p) < obj(x)
-            x += p
+        if obj(map(sigmoid, x_new)) < obj(map(sigmoid, x))
+            x = x_new
         end
         # Update the trust region radius
         if norm(g) > tol
@@ -36,7 +43,7 @@ function trust_region_method(obj, grad, x0; tol=1e-6, max_iter=1000)
             break
         end
     end
-    return x
+    return map(sigmoid, x)
 end
 
 # Initialize a random point within box [0, 1] as the starting point
