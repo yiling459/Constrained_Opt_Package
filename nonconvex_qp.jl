@@ -1,4 +1,5 @@
 using LinearAlgebra
+using Plots
 
 # Generate a 10x10 non-positive definite matrix Q
 Q = rand(10, 10)
@@ -13,26 +14,21 @@ objective(x) = 0.5 * x' * Q * x + q' * x
 # Gradient function
 gradient(x) = Q * x + q
 
-# Sigmoid function to map values into (0, 1)
-sigmoid(x) = 1.0 / (1.0 + exp(-x))  
-
-# projection
-
-# interior method
 function trust_region_method_interior(obj, grad, x0; tol=1e-6, max_iter=1000, μ=1e-3)
     x = x0
     Δ = 1.0  # Initial trust region radius
-    buffer = 1e-10  # Buffer to avoid log(0) or log(1)
+    obj_values = []
+    penalties = []
     for i in 1:max_iter
-        # Modify the gradient to include the penalty for boundary violation
-        x = max.(min.(x, 1 - buffer), buffer)  # Ensure x stays within (0+buffer, 1-buffer)
+        x = max.(min.(x, 1 - 1e-10), 1e-10)
         penalty_grad = μ * (-1 ./ x - 1 ./ (1 .- x))
         g = grad(x) + penalty_grad
         p = -Δ * normalize(g)
         x_new = x + p
-        # Apply the buffer again to ensure no boundary violations
-        x_new = max.(min.(x_new, 1 - buffer), buffer)
+        x_new = max.(min.(x_new, 1 - 1e-10), 1e-10)
         penalty = -μ * sum(log.(x_new) + log.(1 .- x_new))
+        push!(obj_values, obj(x_new) + penalty)
+        push!(penalties, penalty)
         if obj(x_new) + penalty < obj(x) + penalty
             x = x_new
         end
@@ -41,13 +37,13 @@ function trust_region_method_interior(obj, grad, x0; tol=1e-6, max_iter=1000, μ
             break
         end
     end
-    return x
+    return x, obj_values, penalties
 end
 
-# Initialize a random point within box [0, 1] as the starting point
 x0 = rand(10)
+x_opt, obj_values, penalties = trust_region_method_interior(objective, gradient, x0)
 
-x_opt_interior = trust_region_method_interior(objective, gradient, x0)
-
-println("Optimal solution: ", x_opt_interior)
-println("Minimum value: ", objective(x_opt_interior))
+# Plotting the objective function values and penalties
+p1 = plot(obj_values, title = "Objective Function Value", xlabel = "Iteration", ylabel = "Value")
+p2 = plot(penalties, title = "Penalty", xlabel = "Iteration", ylabel = "Penalty Value")
+plot(p1, p2, layout = (2, 1), legend = false)
