@@ -1,4 +1,6 @@
 using LinearAlgebra
+import Pkg
+Pkg.add("Plots")
 using Plots
 
 # Generate a 10x10 non-positive definite matrix Q
